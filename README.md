@@ -1,2 +1,1 @@
-# api-module-examples
-API Fundamentals
+# dmc-juniors
