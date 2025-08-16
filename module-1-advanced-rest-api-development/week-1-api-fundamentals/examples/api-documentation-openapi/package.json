@@ -1,0 +1,48 @@
+{
+  "name": "api-documentation-example",
+  "version": "1.0.0",
+  "description": "Express.js API with OpenAPI/Swagger documentation example (TypeScript)",
+  "main": "dist/express-swagger-example.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && node dist/express-swagger-example.js",
+    "dev": "ts-node src/express-swagger-example.ts",
+    "watch": "nodemon --exec ts-node src/express-swagger-example.ts",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "express",
+    "swagger",
+    "openapi",
+    "api",
+    "documentation",
+    "nodejs",
+    "typescript"
+  ],
+  "author": "DMC Juniors",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.0",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0",
+    "express-rate-limit": "^6.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0",
+    "@types/node": "^20.0.0",
+    "@types/express": "^4.17.0",
+    "@types/cors": "^2.8.0",
+    "@types/swagger-jsdoc": "^6.0.0",
+    "@types/swagger-ui-express": "^4.1.0"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}

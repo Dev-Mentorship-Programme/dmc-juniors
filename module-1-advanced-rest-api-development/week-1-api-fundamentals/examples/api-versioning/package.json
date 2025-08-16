@@ -1,0 +1,42 @@
+{
+  "name": "api-versioning-strategies",
+  "version": "1.0.0",
+  "description": "Comprehensive examples of different API versioning strategies (TypeScript)",
+  "main": "dist/versioning-strategies.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && node dist/versioning-strategies.js",
+    "dev": "ts-node src/versioning-strategies.ts",
+    "watch": "nodemon --exec ts-node src/versioning-strategies.ts",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "api",
+    "versioning",
+    "express",
+    "rest",
+    "nodejs",
+    "typescript",
+    "url-versioning",
+    "header-versioning",
+    "content-negotiation"
+  ],
+  "author": "DMC Juniors",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0",
+    "@types/node": "^20.0.0",
+    "@types/express": "^4.17.0"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}
