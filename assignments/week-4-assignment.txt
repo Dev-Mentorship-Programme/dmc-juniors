@@ -1,0 +1,29 @@
+Objective: 
+To implement and compare a simple REST API and a GraphQL API.
+
+Task 1: Build a RESTful API
+
+Create a simple API for managing books. Implement the following endpoints:
+
+GET /books: Get all books.
+GET /books/:id: Get a single book.
+POST /books: Create a new book.
+PUT /books/:id: Update an existing book's details.
+DELETE /books/:id: Delete a book.
+
+Each book should have at least id, title, and author. Use a simple in-memory array to store the books (optional).
+
+
+Task 2: Build a GraphQL API
+
+Create a GraphQL API on a single endpoint (e.g., /graphql). Define a Book type in your schema with id, title, and author fields.
+
+Implement a query to fetch a single book or all books.
+Implement a mutation to create a new book.
+
+
+Bonus Task (Comparative Analysis):
+
+Using a tool like Postman or Insomnia, test both APIs.
+
+Write a brief report (a few paragraphs) on the experience. Discuss which API was easier to set up, which felt more intuitive to use, and how you would design a task that favors one approach over the other.
