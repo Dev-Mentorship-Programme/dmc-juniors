@@ -9,15 +9,24 @@ import rateLimit from 'express-rate-limit';
 import compression from 'compression';
 import mongoSanitize from 'express-mongo-sanitize';
 import xss from 'xss';
+import * as z from 'zod';
 
 const app = express();
+
+// =================================================================
+// SECURITY CONFIGURATION
+// =================================================================
 
 // JWT Secret (use env in prod)
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY ? Buffer.from(process.env.ENCRYPTION_KEY) : crypto.randomBytes(32);
 const IV_LENGTH = 16;
 
-// Security middleware
+// =================================================================
+// SECURITY MIDDLEWARE
+// =================================================================
+
+// 1. Helmet - Security headers
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -27,12 +36,23 @@ app.use(helmet({
       imgSrc: ["'self'", 'data:', 'https:'],
     },
   },
-  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+  hsts: { 
+    maxAge: 31536000, 
+    includeSubDomains: true, 
+    preload: true },
 }));
 
+// 2. CORS Configuration
 const corsOptions: cors.CorsOptions = {
   origin(origin, callback) {
-    const allowedOrigins = ['http://localhost:3000', 'http://localhost:3001', 'https://yourdomain.com'];
+    // Allow requests from specific domains
+    const allowedOrigins = [
+      'http://localhost:3000', 
+      'http://localhost:3001', 
+      'https://yourdomain.com'
+    ];
+
+     // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
     return callback(new Error('Not allowed by CORS'));
   },
@@ -41,16 +61,33 @@ const corsOptions: cors.CorsOptions = {
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
 };
+
 app.use(cors(corsOptions));
 
-const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, message: { error: 'Too many requests from this IP', retryAfter: '15 minutes' } });
+// 3. Rate Limiting
+const limiter = rateLimit({ 
+  windowMs: 15 * 60 * 1000,  // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: { 
+    error: 'Too many requests from this IP', 
+    retryAfter: '15 minutes' 
+  } 
+});
 app.use('/api/', limiter);
 
+// 4. Body parsing with size limits
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(compression());
-app.use(mongoSanitize({ replaceWith: '_' }));
 
+// 5. Compression
+app.use(compression());
+
+// 6. NoSQL injection prevention
+app.use(mongoSanitize({ 
+  replaceWith: '_' 
+}));
+
+// 7. HTTPS enforcement middleware (for production)
 const enforceHTTPS = (req: Request, res: Response, next: NextFunction) => {
   if (process.env.NODE_ENV === 'production' && req.header('x-forwarded-proto') !== 'https') {
     return res.redirect(`https://${req.header('host')}${req.url}`);
@@ -59,78 +96,116 @@ const enforceHTTPS = (req: Request, res: Response, next: NextFunction) => {
 };
 app.use(enforceHTTPS);
 
+// =================================================================
+// INPUT VALIDATION AND SANITIZATION
+// =================================================================
+
+// Comprehensive input validation middleware
 // Validation & sanitization
-type Rule = {
-  required?: boolean;
-  type?: 'email' | 'string' | 'number';
-  minLength?: number;
-  maxLength?: number;
-  pattern?: RegExp;
-  sanitize?: Array<'trim' | 'escape' | 'xss' | 'toLowerCase'>;
-  min?: number;
-  max?: number;
-  validate?: (value: any) => string | null;
-};
+// type Rule = {
+//   required?: boolean;
+//   type?: 'email' | 'string' | 'number';
+//   minLength?: number;
+//   maxLength?: number;
+//   pattern?: RegExp;
+//   sanitize?: Array<'trim' | 'escape' | 'xss' | 'toLowerCase'>;
+//   min?: number;
+//   max?: number;
+//   validate?: (value: any) => string | null;
+// };
 
-type Schema = Record<string, Rule>;
+// type Schema = Record<string, Rule>;
 
-const sanitizeInput = (input: string, sanitizeRules: Rule['sanitize']) => {
-  let sanitized = input;
-  if (!sanitizeRules) return sanitized;
-  if (sanitizeRules.includes('trim')) sanitized = sanitized.trim();
-  if (sanitizeRules.includes('escape')) sanitized = validator.escape(sanitized);
-  if (sanitizeRules.includes('xss')) sanitized = xss(sanitized);
-  if (sanitizeRules.includes('toLowerCase')) sanitized = sanitized.toLowerCase();
-  return sanitized;
-};
+// const sanitizeInput = (input: string, sanitizeRules: Rule['sanitize']) => {
+//   let sanitized = input;
+//   if (!sanitizeRules) return sanitized;
+//   if (sanitizeRules.includes('trim')) sanitized = sanitized.trim();
+//   if (sanitizeRules.includes('escape')) sanitized = validator.escape(sanitized);
+//   if (sanitizeRules.includes('xss')) sanitized = xss(sanitized);
+//   if (sanitizeRules.includes('toLowerCase')) sanitized = sanitized.toLowerCase();
+//   return sanitized;
+// };
 
-const validateInput = (schema: Schema) => {
+// Comprehensive input validation middleware using zod
+const regSchema = z.object({
+  email: z.string().email().toLowerCase().trim(),
+  password: z.string().min(8).regex(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/),
+  firstName: z.string().max(50).trim(),
+  lastName: z.string().max(50).trim()
+});
+
+const loginSchema = z.object({
+  email: z.string().email().toLowerCase().trim(),
+  password: z.string().min(8).regex(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+})
+
+const blogSchema = z.object({
+  content: z.string().max(1000).trim(),
+  title: z.string().max(1000).trim().optional()
+})
+// const validateInput = (schema: Schema) => {
+//   return (req: Request, res: Response, next: NextFunction): void => {
+//     const errors: string[] = [];
+//     for (const [field, rules] of Object.entries(schema)) {
+//       const rawValue = (req.body as any)[field];
+//       const value = typeof rawValue === 'string' ? rawValue : String(rawValue ?? '');
+
+//       if (rules.required && (!value || value.trim() === '')) {
+//         errors.push(`${field} is required`);
+//         continue;
+//       }
+//       if (!value && !rules.required) continue;
+
+//       if (rules.type === 'email' && !validator.isEmail(value)) errors.push(`${field} must be a valid email`);
+
+//       if (rules.type === 'string') {
+//         if (rules.minLength && value.length < rules.minLength) errors.push(`${field} must be at least ${rules.minLength} characters`);
+//         if (rules.maxLength && value.length > rules.maxLength) errors.push(`${field} must be no more than ${rules.maxLength} characters`);
+//         if (rules.pattern && !rules.pattern.test(value)) errors.push(`${field} format is invalid`);
+//       }
+
+//       if (rules.type === 'number') {
+//         const numValue = Number(value);
+//         if (Number.isNaN(numValue)) errors.push(`${field} must be a number`);
+//         else {
+//           if (rules.min !== undefined && numValue < rules.min) errors.push(`${field} must be at least ${rules.min}`);
+//           if (rules.max !== undefined && numValue > rules.max) errors.push(`${field} must be no more than ${rules.max}`);
+//         }
+//       }
+
+//       if (rules.validate) {
+//         const customError = rules.validate(value);
+//         if (customError) errors.push(customError);
+//       }
+//     }
+
+//     if (errors.length > 0) {
+//       res.status(400).json({ success: false, error: 'Validation failed', details: errors });
+//       return;
+//     }
+
+//     for (const [field, rules] of Object.entries(schema)) {
+//       if ((req.body as any)[field] && rules.sanitize) {
+//         (req.body as any)[field] = sanitizeInput((req.body as any)[field], rules.sanitize);
+//       }
+//     }
+
+//     next();
+//   };
+// };
+
+const validateInput = (schema: z.ZodObject<any, any>) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    const errors: string[] = [];
-    for (const [field, rules] of Object.entries(schema)) {
-      const rawValue = (req.body as any)[field];
-      const value = typeof rawValue === 'string' ? rawValue : String(rawValue ?? '');
-
-      if (rules.required && (!value || value.trim() === '')) {
-        errors.push(`${field} is required`);
-        continue;
-      }
-      if (!value && !rules.required) continue;
-
-      if (rules.type === 'email' && !validator.isEmail(value)) errors.push(`${field} must be a valid email`);
-
-      if (rules.type === 'string') {
-        if (rules.minLength && value.length < rules.minLength) errors.push(`${field} must be at least ${rules.minLength} characters`);
-        if (rules.maxLength && value.length > rules.maxLength) errors.push(`${field} must be no more than ${rules.maxLength} characters`);
-        if (rules.pattern && !rules.pattern.test(value)) errors.push(`${field} format is invalid`);
-      }
-
-      if (rules.type === 'number') {
-        const numValue = Number(value);
-        if (Number.isNaN(numValue)) errors.push(`${field} must be a number`);
-        else {
-          if (rules.min !== undefined && numValue < rules.min) errors.push(`${field} must be at least ${rules.min}`);
-          if (rules.max !== undefined && numValue > rules.max) errors.push(`${field} must be no more than ${rules.max}`);
-        }
-      }
-
-      if (rules.validate) {
-        const customError = rules.validate(value);
-        if (customError) errors.push(customError);
-      }
-    }
-
-    if (errors.length > 0) {
+    
+    const result = schema.safeParse(req.body); 
+    
+    if (!result.success) {
+      const errors = result.error.format(); // or result.error.issues for a different format
       res.status(400).json({ success: false, error: 'Validation failed', details: errors });
       return;
     }
 
-    for (const [field, rules] of Object.entries(schema)) {
-      if ((req.body as any)[field] && rules.sanitize) {
-        (req.body as any)[field] = sanitizeInput((req.body as any)[field], rules.sanitize);
-      }
-    }
-
+    req.body = result.data;
     next();
   };
 };
@@ -221,10 +296,11 @@ const decrypt = (encryptedData: string) => {
 app.post(
   '/api/auth/login',
   rateLimit({ windowMs: 15 * 60 * 1000, max: 5, message: { error: 'Too many login attempts' } }),
-  validateInput({
-    email: { required: true, type: 'email', sanitize: ['trim', 'toLowerCase'] },
-    password: { required: true, type: 'string', minLength: 6, sanitize: ['trim'] },
-  }),
+  validateInput(
+   loginSchema
+    // email: { required: true, type: 'email', sanitize: ['trim', 'toLowerCase'] },
+    // password: { required: true, type: 'string', minLength: 6, sanitize: ['trim'] },
+  ),
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { email, password } = req.body as any;
@@ -242,17 +318,19 @@ app.post(
 
 app.post(
   '/api/auth/register',
-  validateInput({
-    email: { required: true, type: 'email', sanitize: ['trim', 'toLowerCase'] },
-    password: {
-      required: true,
-      type: 'string',
-      minLength: 8,
-      validate: (value) => (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value) ? 'Password must contain at least one lowercase letter, one uppercase letter, and one number' : null),
-    },
-    firstName: { required: true, type: 'string', maxLength: 50, sanitize: ['trim', 'xss'] },
-    lastName: { required: true, type: 'string', maxLength: 50, sanitize: ['trim', 'xss'] },
-  }),
+  validateInput(
+    regSchema
+     
+    // email: { required: true, type: 'email', sanitize: ['trim', 'toLowerCase'] },
+    // password: {
+    //   required: true,
+    //   type: 'string',
+    //   minLength: 8,
+    //   validate: (value) => (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value) ? 'Password must contain at least one lowercase letter, one uppercase letter, and one number' : null),
+    // },
+    // firstName: { required: true, type: 'string', maxLength: 50, sanitize: ['trim', 'xss'] },
+    // lastName: { required: true, type: 'string', maxLength: 50, sanitize: ['trim', 'xss'] },
+  ),
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { email, password, firstName, lastName } = req.body as any;
@@ -298,10 +376,12 @@ app.get('/api/data', authenticateApiKey as any, (req: Request & { user?: User },
 app.post(
   '/api/comments',
   authenticateToken as any,
-  validateInput({
-    content: { required: true, type: 'string', maxLength: 1000, sanitize: ['trim', 'xss'] },
-    title: { required: false, type: 'string', maxLength: 200, sanitize: ['trim', 'xss'] },
-  }),
+  validateInput(
+   blogSchema
+     
+    // content: { required: true, type: 'string', maxLength: 1000, sanitize: ['trim', 'xss'] },
+    // title: { required: false, type: 'string', maxLength: 200, sanitize: ['trim', 'xss'] },
+  ),
   (req: Request & { user?: JwtPayload }, res: Response) => {
     const { content, title } = req.body as any;
     const sanitizedContent = xss(content, { whiteList: { p: [], br: [], strong: [], em: [], u: [] } });
