@@ -1,0 +1,280 @@
+openapi: 3.0.3
+info:
+  title: User Management API
+  version: 1.0.0
+  description: A comprehensive API for managing users with authentication and authorization
+  contact:
+    name: DMC Juniors Team
+    email: support@dmcjuniors.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Development server
+  - url: https://api.dmcjuniors.com/v1
+    description: Production server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: 'http'
+      scheme: 'bearer'
+      bearerFormat: 'JWT'
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - username
+        - firstName
+        - lastName
+      properties:
+        id:
+          type: string
+          description: Unique user identifier
+          example: 64a7b8c9d1e2f3g4h5i6j7k8
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: john.doe@example.com
+        username:
+          type: string
+          description: Unique username
+          example: johndoe123
+        firstName:
+          type: string
+          description: User first name
+          example: John
+        lastName:
+          type: string
+          description: User last name
+          example: Doe
+        role:
+          type: string
+          enum:
+            - admin
+            - user
+            - moderator
+          description: User role
+          example: user
+        isActive:
+          type: boolean
+          description: User account status
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          example: 2023-08-15T10:30:00Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2023-08-15T14:20:00Z
+    CreateUserRequest:
+      type: object
+      required:
+        - email
+        - username
+        - password
+        - firstName
+        - lastName
+      properties:
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          pattern: '^[a-zA-Z0-9_]+$'
+          example: johndoe123
+        password:
+          type: string
+          minLength: 8
+          example: SecurePassword123!
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: John
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: Doe
+        role:
+          type: string
+          enum:
+            - admin
+            - user
+            - moderator
+          default: user
+          example: user
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Validation error
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            details:
+              type: array
+              items:
+                type: string
+              example:
+                - Email is required
+
+paths:
+  /api/v1/users:
+    get:
+      summary: Get all users
+      description: Retrieve a paginated list of all users
+      tags:
+        - Users
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of items per page
+        - in: query
+          name: search
+          schema:
+            type: string
+            maxLength: 100
+          description: Search term for filtering users
+      responses:
+        '200':
+          description: Successfully retrieved users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  pagination:
+                    type: object
+                    properties:
+                      currentPage:
+                        type: integer
+                      totalPages:
+                        type: integer
+                      totalItems:
+                        type: integer
+                      itemsPerPage:
+                        type: integer
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+    post:
+      summary: Create a new user
+      description: Register a new user in the system
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/users/{userId}:
+    get:
+      summary: Get user by ID
+      description: Retrieve a specific user by their unique identifier
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the user
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - bearerAuth: []
+
+security:
+  - bearerAuth: []
