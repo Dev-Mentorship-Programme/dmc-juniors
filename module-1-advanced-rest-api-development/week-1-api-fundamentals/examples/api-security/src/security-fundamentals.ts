@@ -49,6 +49,7 @@ app.use('/api/', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(compression());
+
 app.use(mongoSanitize({ replaceWith: '_' }));
 
 const enforceHTTPS = (req: Request, res: Response, next: NextFunction) => {
@@ -138,7 +139,7 @@ const validateInput = (schema: Schema) => {
 // Mock users
 type User = { id: number; email: string; password: string; role: 'admin' | 'user'; apiKey: string; isActive: boolean; firstName?: string; lastName?: string; createdAt?: string };
 const users: User[] = [
-  { id: 1, email: 'admin@example.com', password: '$2b$10$6Z0xHpGUzqKfXhHFb5KzzeE.nSZ.zS1FrQZ5KzKfXhHFb5KzzeE.nS', role: 'admin', apiKey: 'ak_admin_12345', isActive: true },
+  { id: 1, email: 'admin@example.com', password: '$2a$12$DxGdACkAElsV1rfL8V0Q6OAtr/wH5r8UxDzHlEy1aYwExhQkmJj32', role: 'admin', apiKey: 'ak_admin_12345', isActive: true },
   { id: 2, email: 'user@example.com', password: '$2b$10$7A1yIqHVzrLgYiIGc6Laa.fTa.aT2GsRa6Laa.7A1yIqHVzrLgYiIG', role: 'user', apiKey: 'ak_user_67890', isActive: true },
 ];
 
