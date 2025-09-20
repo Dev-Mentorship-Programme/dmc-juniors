@@ -1,0 +1,81 @@
+-------------------------------------------------------------
+🏋️ Assignment: Gym Management App (Authentication + Authorization)
+-------------------------------------------------------------
+You are to build a simple Gym Management API using any backend framework of your choice.  
+For simplicity, use an in-memory database (arrays or objects in code).
+
+🎯 Roles
+- Admin → Can manage gym members.  
+- Member → Can view and update their profile.  
+
+-------------------------------------------------------------
+📌 Features & Requirements
+-------------------------------------------------------------
+1. Authentication
+   - Users must be able to sign up (with email & password).  
+   - Passwords must be hashed before storing (use bcrypt).  
+   - Users must be able to log in and receive a JWT token.  
+   - Protect routes using JWT authentication middleware.  
+
+2. Authorization (RBAC)
+   - Admins can manage all members (create, view, update, delete).  
+   - Members can only view and update their own profile.  
+
+3. Input Validation
+   - Validate inputs (e.g., email must be valid, password must be at least 6 chars).  
+   - Use libraries like express-validator or custom validation logic.  
+
+-------------------------------------------------------------
+📌 Expected Routes
+-------------------------------------------------------------
+Auth
+- POST /auth/register → Register as admin or member.  
+- POST /auth/login → Log in and get a JWT token.  
+
+Admin Routes (protected, role = admin)
+- GET /admin/members → View all members.  
+- POST /admin/members → Create a new member.  
+- PUT /admin/members/:id → Update member details.  
+- DELETE /admin/members/:id → Delete a member.  
+
+Member Routes (protected, role = member)
+- GET /members/me → View own profile.  
+- PUT /members/me → Update own profile (e.g., name, password).  
+
+-------------------------------------------------------------
+🛠 Technical Requirements
+-------------------------------------------------------------
+- Use JWT for authentication.  
+- Implement RBAC using middleware (e.g., checkRole("admin")).  
+- Use bcrypt for password hashing.  
+- Use any validator library for input validation.  
+- Use an in-memory database (array or object) to simulate users.  
+
+-------------------------------------------------------------
+✅ Example Workflow
+-------------------------------------------------------------
+1. Register an admin and a member.  
+2. Log in with both accounts to receive tokens.  
+3. Use the admin token to:
+   - View all members  
+   - Create/update/delete a member  
+4. Use the member token to:
+   - View own profile  
+   - Update own profile  
+5. Try accessing unauthorized routes and confirm access is denied.  
+
+-------------------------------------------------------------
+📝 Deliverables
+-------------------------------------------------------------
+- A working server with authentication and authorization.  
+- Example test data (some preloaded users).  
+- Demonstration that role-based access works as expected.  
+
+-------------------------------------------------------------
+🎯 Learning Outcomes
+-------------------------------------------------------------
+By completing this project, you will:  
+- Understand JWT-based authentication.  
+- Implement role-based authorization.  
+- Secure user data with password hashing.  
+- Apply input validation for better security.  
