@@ -183,6 +183,85 @@ A robust HTTP client implementation with retry logic, circuit breaker pattern, r
   Caching is like keeping frequently used info on your desk instead of walking to the library every time you need it.
 
 - **Timeout Handling**: Configurable request timeouts
+
+  ### What it is
+  
+  A **timeout** is the maximum amount of time your system will wait for a request (to an API, database, or service) before giving up.
+  
+  **Timeout handling** means setting and managing these limits so your app doesn't hang forever.
+  
+  **Configurable** means you can adjust these values (e.g., 2s, 5s, 30s) depending on the service.
+  
+  ### How it works (step by step)
+  
+  **Send a request** → Your service calls another API or database.
+  
+  **Start a timer** → The system waits for a response.
+  
+  **If the service responds in time** → ✅ success.
+  
+  **If the service takes too long** → ❌ request is cancelled and a timeout error is thrown.
+  
+  **Handle the timeout** → Your app might retry, return a fallback, or log the error.
+  
+  ### Why it's useful
+  
+  - **Prevents hanging requests** → Without timeouts, your system could wait forever if the other service never responds.
+  - **Improves resilience** → Ensures one slow service doesn't block your whole app.
+  - **Protects resources** → Frees up threads/connections instead of locking them until something fails.
+  
+  ### 🔹 Example in plain words:
+  
+  You call a restaurant to order food.
+  
+  If they don't pick up in 30 seconds, you hang up (timeout).
+  
+  Instead of waiting forever, you either try again (retry) or move to another restaurant (fallback).
+  
+  👉 **In short:**
+  Timeout handling = setting a "maximum wait time" for a request, so your system fails fast instead of getting stuck.
+  
+  ### 🔹 The Resilience Trio: Timeout + Retry + Circuit Breaker
+  
+  Timeouts, Retries (with backoff), and Circuit Breakers are often used together as a resilience trio in distributed/microservice systems.
+  
+  **🔹 1. Timeout Handling → "Don't wait forever"**
+  
+  - **Purpose**: Fail fast if a service is too slow.
+  - **Rule**: "If no response in X seconds, stop waiting."
+  - **Benefit**: Frees up resources instead of hanging indefinitely.
+  - **Analogy**: You hang up the phone if nobody answers within 30 seconds.
+  
+  **🔹 2. Retry Logic with Exponential Backoff → "Try again, but smarter"**
+  
+  - **Purpose**: Handle temporary failures (network glitch, server overload).
+  - **Rule**: Retry after 1s → 2s → 4s … up to a limit.
+  - **Benefit**: Many issues resolve themselves if you just wait and retry.
+  - **Analogy**: If the call doesn't go through, you try again later, waiting a bit longer each time.
+  
+  **🔹 3. Circuit Breaker → "Stop trying if it's really broken"**
+  
+  - **Purpose**: Prevent cascading failures when a service is consistently failing.
+  - **Rule**: If failure rate crosses threshold, "trip" the breaker and stop sending requests for a cooldown period.
+  - **Benefit**: Protects the whole system from being dragged down.
+  - **Analogy**: After 5 failed calls, you stop calling and send a text: "Call me when you're back."
+  
+  **🔄 How They Work Together (Flow)**
+  
+  1. **Request sent** → Timer starts (timeout handling).
+  2. **If response is too slow** → timeout error.
+  3. **Timeout/failure happens** → Trigger retry logic.
+     - Wait exponentially longer between retries.
+  4. **If repeated failures keep happening** → Circuit breaker trips.
+     - Blocks new requests and returns a fallback.
+     - After cooldown, tests the service again.
+  
+  **⚡ Real-world analogy: Ordering food online**
+  
+  - **Timeout**: If the restaurant doesn't confirm your order in 30 seconds, you cancel (fail fast).
+  - **Retry**: You try again after 1 minute, then 2 minutes, then 4 minutes (backoff).
+  - **Circuit breaker**: After multiple failures, you stop trying that restaurant and switch to another.
+
 - **Health Monitoring**: Built-in health check and metrics collection
 
 ## Setup
