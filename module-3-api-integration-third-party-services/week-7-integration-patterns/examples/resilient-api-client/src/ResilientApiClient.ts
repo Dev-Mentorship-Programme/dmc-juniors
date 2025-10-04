@@ -29,6 +29,7 @@ export interface ResilientClientConfig {
     maxConcurrent: number;
     minTime: number;
   };
+  exponentialDelay?: boolean;
 }
 
 export interface ApiResponse<T = any> {

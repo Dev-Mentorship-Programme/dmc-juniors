@@ -49,8 +49,9 @@ const jsonPlaceholderConfig: ResilientClientConfig = {
   },
   retryConfig: {
     retries: 3,
-    retryDelay: 1000
-  }
+    retryDelay: 1000,
+  },
+  exponentialDelay: true
 };
 
 const httpBinConfig: ResilientClientConfig = {
