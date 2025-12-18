@@ -36,80 +36,75 @@ let allBooks = [
 
 
 app.get('/books', (req, res) => {
-    try {
-        const response = allBooks
-        res.status(200).json(response);
-    } catch (err) {
-        res.status(500).send({ err: 'Error'})
+    
+    const response = allBooks
+    
+    if (!response) {
+        res.status(500).send({ error: 'Book list not found' });
     }
+    res.status(200).json(response);
+    
 });
 
 app.get('/books/:id', (req, res) => {
-    try {
-        const id = parseInt(req.params.id)
-        const response = allBooks?.filter(allBooks => allBooks?.id === id)[0]
-        res.status(200).json(response)
-    } catch (err) {
-        res.status(500).send({err: 'Error coming from the server'})
+    
+    const id = parseInt(req.params.id)
+    const response = allBooks?.filter(allBooks => allBooks?.id === id)[0]
+    
+    
+    if (!response) {
+        res.status(500).send({error: 'Error getting this book with the id'})
     }
+    
+    res.status(200).json(response)
 
 });
 
 app.post('/books', (req, res) => {
-    try {
-        const data = (req.body)
-        const newBook = { id: allBooks.length + 1, ...data}
-        allBooks.push(newBook);
-        const response = allBooks
+    
+    const data = (req.body)
+    const newBook = { id: allBooks.length + 1, ...data}
+    const response = allBooks
 
-        res.status(200).json(response)
-    } catch (err) {
-        res.status(500).send({err: 'Error'});
+    if (!response) res.status(500).send({error: 'Unable to add book'});
 
-    }
+    allBooks.push(newBook);
+
+    res.status(200).json(response)
+   
 })
 
 app.put('/books/:id', (req, res) => {
-    try {
-        const data = req.body
-        const id = parseInt(req.params.id)
-        const index = allBooks.findIndex(allBooks => allBooks.id === id)
-
-        if (index === -1) throw new Error('Book not found')
-        else {
-            allBooks[index] = data
-            return allBooks[index]
-        }
-
-        const response = allBooks[index]
-        res.status(200).json(response);
-
-    } catch (err) {
-        res.send({err: 'Error'})
+    
+    const data = req.body
+    const id = parseInt(req.params.id)
+    const index = allBooks.findIndex(allBooks => allBooks.id === id)
+    
+    if (index === -1) {
+        return res.status(404).json({ error: 'Book not found' })
     }
+    
+    allBooks[index] = {id, ...data}
+
+    res.status(200).json(allBooks);
+
  
 })
 
 app.delete('/books/:id', (req, res) => {
+    
+    const response = allBooks
+    
     const id = parseInt(req.params.id)
 
-    try {
-        const index = allBooks.findIndex(allBooks => allBooks.id === id);
-        if (index === -1) throw new Error('Pet not found')
-        else {
-            allBooks.splice(index, 1)
-            return allBooks
-        }
-        const response = allBooks
-        res.status(200).json(response)
-    } catch (err) {
-        
-    }
+    const index = allBooks.findIndex(allBooks => allBooks.id === id);
+
+    if (index === -1) throw new Error('Book not found')
     
+    allBooks.splice(index, 1)
+    res.status(200).json(response)
  
 })
-
-app.get('')
 
 const PORT = 3000;
 
