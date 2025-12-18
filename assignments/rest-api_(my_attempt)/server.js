@@ -37,12 +37,7 @@ let allBooks = [
 
 app.get('/books', (req, res) => {
     
-    const response = allBooks
-    
-    if (!response) {
-        res.status(500).send({ error: 'Book list not found' });
-    }
-    res.status(200).json(response);
+    res.status(200).json(allBooks);
     
 });
 
@@ -53,7 +48,7 @@ app.get('/books/:id', (req, res) => {
     
     
     if (!response) {
-        res.status(500).send({error: 'Error getting this book with the id'})
+        res.status(404).send({error: 'Error getting this book with the id'})
     }
     
     res.status(200).json(response)
@@ -64,13 +59,15 @@ app.post('/books', (req, res) => {
     
     const data = (req.body)
     const newBook = { id: allBooks.length + 1, ...data}
-    const response = allBooks
 
-    if (!response) res.status(500).send({error: 'Unable to add book'});
+    if (!response) res.status(404).send({error: 'Unable to add book'});
 
     allBooks.push(newBook);
 
-    res.status(200).json(response)
+    res.status(201).json({
+        message: "New book added", 
+        newBook
+    });
    
 })
 
@@ -86,7 +83,7 @@ app.put('/books/:id', (req, res) => {
     
     allBooks[index] = {id, ...data}
 
-    res.status(200).json(allBooks);
+    res.status(201).json(allBooks[index]);
 
  
 })
@@ -99,10 +96,10 @@ app.delete('/books/:id', (req, res) => {
 
     const index = allBooks.findIndex(allBooks => allBooks.id === id);
 
-    if (index === -1) throw new Error('Book not found')
+    if (index === -1)  return res.status(404).json({ error: 'Book not found' })
     
     allBooks.splice(index, 1)
-    res.status(200).json(response)
+    res.status(200).json({message: `Book with id: ${id} successfully deleted`})
  
 })
 
